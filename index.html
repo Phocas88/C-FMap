@@ -6,7 +6,7 @@
 <title>Warehouse 3D — Cycle Count</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { width: 100%; height: 100%; overflow: hidden; background: #1f2632; color: #e8edf3; font-family: 'Inter', -apple-system, system-ui, sans-serif; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #2a2e36; color: #e8edf3; font-family: 'Inter', -apple-system, system-ui, sans-serif; }
 #app { position: relative; width: 100vw; height: 100vh; }
 #canvas { display: block; width: 100%; height: 100%; cursor: grab; outline: none; }
 #canvas:active { cursor: grabbing; }
@@ -87,7 +87,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #1f2632; c
 #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(52,217,176,0.85); }
 #crosshair::before { left: 50%; top: 0; bottom: 0; width: 2px; transform: translateX(-50%); }
 #crosshair::after { top: 50%; left: 0; right: 0; height: 2px; transform: translateY(-50%); }
-#loading { position: fixed; inset: 0; background: #1f2632; display: flex; align-items: center; justify-content: center;
+#loading { position: fixed; inset: 0; background: #2a2e36; display: flex; align-items: center; justify-content: center;
   z-index: 100; color: #8a96a8; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 2px; }
 .danger-btn { background: transparent; color: #ef476f; border: 1px solid #ef476f; padding: 5px 8px; border-radius: 3px; cursor: pointer;
   font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 1px; }
@@ -167,16 +167,21 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #1f2632; c
       <div class="h-row"><span>Rotate</span><kbd>L-DRAG</kbd></div>
       <div class="h-row"><span>Pan</span><kbd>R-DRAG</kbd></div>
       <div class="h-row"><span>Zoom</span><kbd>SCROLL</kbd></div>
+      <div class="h-row"><span>Move map</span><kbd>↑↓←→</kbd></div>
+      <div class="h-row"><span>Zoom in/out</span><kbd>+ / −</kbd></div>
       <div class="h-row"><span>Action</span><kbd>CLICK</kbd></div>
+      <div class="h-row"><span>Bulk paint</span><kbd>L-DRAG</kbd></div>
       <div class="h-row"><span>Reset view</span><kbd>R</kbd></div>
     </div>
     <div id="help-walk" style="display:none;">
       <div class="h-row"><span>Forward / Back</span><kbd>W / S</kbd></div>
       <div class="h-row"><span>Strafe</span><kbd>A / D</kbd></div>
+      <div class="h-row"><span>Or move</span><kbd>↑↓←→</kbd></div>
       <div class="h-row"><span>Look up/down</span><kbd>MOUSE Y</kbd></div>
       <div class="h-row"><span>Turn</span><kbd>MOUSE X</kbd></div>
       <div class="h-row"><span>Run</span><kbd>SHIFT</kbd></div>
       <div class="h-row"><span>Lift up</span><kbd>SPACE</kbd></div>
+      <div class="h-row"><span>Zoom in/out</span><kbd>+ / −</kbd></div>
       <div class="h-row"><span>Action</span><kbd>CLICK</kbd></div>
       <div class="h-row"><span>Exit walk</span><kbd>ESC</kbd></div>
     </div>
@@ -210,24 +215,24 @@ const WAREHOUSE_DATA = {"bins":[{"r":3,"c":9,"p":90,"a":1,"l":4,"t":"horizontal"
 // =============== END DATA ===============
 
 const DEFAULT_DIVISIONS = [
-  { id: "d_napa",      name: "NAPA",       color: "#ff8c42" },
-  { id: "d_tag",       name: "TAG",        color: "#42a5ff" },
-  { id: "d_everellis", name: "Ever Ellis", color: "#ffd166" },
-  { id: "d_foreside",  name: "Foreside",   color: "#34d9b0" },
-  { id: "d_vip",       name: "VIP",        color: "#c77dff" },
+  { id: "d_napa",      name: "NAPA",       color: "#c46630" },
+  { id: "d_tag",       name: "TAG",        color: "#3678b8" },
+  { id: "d_everellis", name: "Ever Ellis", color: "#c9a13d" },
+  { id: "d_foreside",  name: "Foreside",   color: "#27a085" },
+  { id: "d_vip",       name: "VIP",        color: "#9054b0" },
 ];
-const PALETTE = ["#ff8c42","#42a5ff","#ffd166","#34d9b0","#c77dff","#ef476f","#06d6a0","#fb5607","#3a86ff","#8338ec","#ff006e","#ffbe0b"];
+const PALETTE = ["#c46630","#3678b8","#c9a13d","#27a085","#9054b0","#b03a5a","#0a8d6f","#c4541b","#2e6abf","#623da8","#b8005a","#c89500"];
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 function aisleStr(a) { return (typeof a === 'number') ? pad2(a) : a; }
 function levelKey(a, p, lvl) { return `${aisleStr(a)}-${pad2(p)}-${pad2(lvl)}`; }
 
 const TYPE_INFO = {
-  horizontal: { label: "Aisle Rack (4-high)", zoneColor: "#5e7c9e", binPrefix: null },
-  vertical:   { label: "Aisle Rack (6-high)", zoneColor: "#5e7c9e", binPrefix: null },
-  pushback:   { label: "Push-Back",           zoneColor: "#d4c560", binPrefix: "PB" },
-  fbulk:      { label: "FBulk",               zoneColor: "#7ab8d9", binPrefix: "FB" },
-  sbulk:      { label: "SBulk",               zoneColor: "#a8b88a", binPrefix: "SB" },
+  horizontal: { label: "Aisle Rack (4-high)", zoneColor: "#4a5d75", binPrefix: null },
+  vertical:   { label: "Aisle Rack (6-high)", zoneColor: "#4a5d75", binPrefix: null },
+  pushback:   { label: "Push-Back",           zoneColor: "#8a7a3a", binPrefix: "PB" },
+  fbulk:      { label: "FBulk",               zoneColor: "#4f7a93", binPrefix: "FB" },
+  sbulk:      { label: "SBulk",               zoneColor: "#6b7a55", binPrefix: "SB" },
 };
 
 // =============== STATE ===============
@@ -249,7 +254,36 @@ let state = {
 };
 let storageReady = false;
 
-const SV = "v5";
+const SV = "v6";
+
+// Pre-defined division ranges (applied on first load if assignments are empty)
+// Each entry: divisionId, list of aisle ranges. A range is [start, end] inclusive (numeric aisles only).
+const DEFAULT_ASSIGNMENT_RANGES = [
+  { divId: "d_napa",      ranges: [[70, 91]] },                  // NAPA: 70-93 (max in data is 91)
+  { divId: "d_tag",       ranges: [[2, 6], [9, 32]] },           // TAG
+  { divId: "d_foreside",  ranges: [[33, 38]] },                  // Foreside
+  { divId: "d_vip",       ranges: [[56, 56], [94, 94]] },        // VIP
+  { divId: "d_everellis", ranges: [[7, 8]] },                    // Ever Ellis
+];
+
+function applyDefaultAssignments() {
+  // Only run if there are no existing assignments (first load on this version).
+  if (Object.keys(state.assignments).length > 0) return;
+  // For every instance whose aisle is numeric and falls in a defined range, assign it.
+  for (let i = 0; i < instances.length; i++) {
+    const u = instances[i];
+    const a = u.bin.a;
+    if (typeof a !== "number") continue;
+    for (const { divId, ranges } of DEFAULT_ASSIGNMENT_RANGES) {
+      if (ranges.some(([lo, hi]) => a >= lo && a <= hi)) {
+        state.assignments[getInstanceKey(i)] = divId;
+        break;
+      }
+    }
+  }
+  saveDebounced("assignments");
+}
+
 async function loadState() {
   for (const key of ["divisions", "counted", "assignments", "obstructions", "walls"]) {
     try {
@@ -274,29 +308,29 @@ const canvas = document.getElementById("canvas");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x1f2632, 1);
+renderer.setClearColor(0x2a2e36, 1);
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(0x1f2632, 320, 1000);
+scene.fog = new THREE.Fog(0x2a2e36, 320, 1000);
 
 const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 2000);
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.95));
-const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+scene.add(new THREE.AmbientLight(0xffffff, 0.65));
+const sun = new THREE.DirectionalLight(0xffffff, 0.85);
 sun.position.set(80, 200, 60);
 scene.add(sun);
-const fill = new THREE.DirectionalLight(0xfff4e6, 0.6);
+const fill = new THREE.DirectionalLight(0xffeed8, 0.35);
 fill.position.set(-80, 80, -60);
 scene.add(fill);
-scene.add(new THREE.HemisphereLight(0xc8d8f0, 0x4a5566, 0.6));
+scene.add(new THREE.HemisphereLight(0xa8b0bc, 0x4a5566, 0.4));
 
-const groundMat = new THREE.MeshStandardMaterial({ color: 0x556270, roughness: 0.92, metalness: 0.05 });
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x8a8d92, roughness: 0.95, metalness: 0.02 });
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), groundMat);
 ground.rotation.x = -Math.PI/2;
 ground.position.y = 0;
 scene.add(ground);
 
-const grid = new THREE.GridHelper(2000, 200, 0x4a5566, 0x363f4d);
+const grid = new THREE.GridHelper(2000, 200, 0x6e7178, 0x5a5d63);
 grid.position.y = 0.01;
 scene.add(grid);
 
@@ -346,8 +380,8 @@ const cargoD = d - CARGO_INSET * 2;
 const cargoGeo = new THREE.BoxGeometry(cargoW, CARGO_HEIGHT, cargoD);
 
 // Materials
-const beamMat = new THREE.MeshStandardMaterial({ color: 0xff7a2a, roughness: 0.45, metalness: 0.5 });   // safety orange beams
-const palletMat = new THREE.MeshStandardMaterial({ color: 0x9a6b3d, roughness: 0.85, metalness: 0.05 }); // wood
+const beamMat = new THREE.MeshStandardMaterial({ color: 0xb05a1f, roughness: 0.55, metalness: 0.5 });   // darker safety orange
+const palletMat = new THREE.MeshStandardMaterial({ color: 0x6f4d2c, roughness: 0.85, metalness: 0.05 }); // darker wood
 const cargoMat = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0.1 });                    // per-instance color
 
 // Three instanced meshes
@@ -391,12 +425,12 @@ function setInstancePositions() {
 setInstancePositions();
 
 function hexRGB(hex) { const c = new THREE.Color(hex); return [c.r, c.g, c.b]; }
-const COLOR_UNCOUNTED = hexRGB("#a89578");   // cardboard
-const COLOR_DIM = hexRGB("#3d4a5e");
-const COLOR_COUNTED = hexRGB("#34d9b0");
-const COLOR_HOVER = hexRGB("#ff8c42");
-const COLOR_SEARCH = hexRGB("#ffd166");
-const COLOR_OBSTRUCTION = hexRGB("#ef476f");
+const COLOR_UNCOUNTED = hexRGB("#7a6e5a");   // darker cardboard
+const COLOR_DIM = hexRGB("#2e3845");
+const COLOR_COUNTED = hexRGB("#1f9978");     // darker green
+const COLOR_HOVER = hexRGB("#e8743a");        // darker orange highlight
+const COLOR_SEARCH = hexRGB("#c9a13d");       // muted yellow
+const COLOR_OBSTRUCTION = hexRGB("#b03a5a"); // darker pink/red
 
 let searchHighlight = null;
 
@@ -459,7 +493,7 @@ WAREHOUSE_DATA.bins.forEach(b => {
   }
 });
 const postGeo = new THREE.CylinderGeometry(POST_RADIUS, POST_RADIUS, 1, 6);
-const postMat = new THREE.MeshStandardMaterial({ color: 0xff7a2a, roughness: 0.4, metalness: 0.55 });
+const postMat = new THREE.MeshStandardMaterial({ color: 0xb05a1f, roughness: 0.5, metalness: 0.55 });
 const postMesh = new THREE.InstancedMesh(postGeo, postMat, stacks.length * 4);
 const cornerOffsets = [[-1,-1],[1,-1],[1,1],[-1,1]];
 for (let i = 0; i < stacks.length; i++) {
@@ -628,6 +662,17 @@ function tickWalk(dt) {
   const targetEye = k.space ? EYE_HEIGHT_HIGH : EYE_HEIGHT_NORMAL;
   eyeHeight += (targetEye - eyeHeight) * Math.min(1, dt * 8);
   walk.position.y = eyeHeight;
+  // FOV zoom for walking (+ zoom in, - zoom out)
+  if (walk.zoomIn || walk.zoomOut) {
+    let fov = camera.fov;
+    if (walk.zoomIn) fov -= 30 * dt;
+    if (walk.zoomOut) fov += 30 * dt;
+    fov = Math.max(20, Math.min(90, fov));
+    if (fov !== camera.fov) {
+      camera.fov = fov;
+      camera.updateProjectionMatrix();
+    }
+  }
   if (mx === 0 && mz === 0) { updateWalkCamera(); return; }
   const len = Math.hypot(mx, mz);
   mx /= len; mz /= len;
@@ -647,6 +692,8 @@ function enterWalkMode() {
   walk.yaw = orbit.theta + Math.PI/2;
   walk.pitch = 0;
   eyeHeight = EYE_HEIGHT_NORMAL;
+  camera.fov = 70;
+  camera.updateProjectionMatrix();
   updateWalkCamera();
   canvas.classList.add("walking");
   document.getElementById("walk-banner").classList.add("show");
@@ -662,6 +709,8 @@ function enterWalkMode() {
 function exitWalkMode() {
   state.walking = false;
   orbit.target.set(walk.position.x, 5, walk.position.z);
+  camera.fov = 70;
+  camera.updateProjectionMatrix();
   updateOrbitCamera();
   canvas.classList.remove("walking");
   document.getElementById("walk-banner").classList.remove("show");
@@ -673,6 +722,7 @@ function exitWalkMode() {
   document.getElementById("help-title").textContent = "CONTROLS";
   if (document.exitPointerLock) document.exitPointerLock();
   Object.keys(walk.keys).forEach(k => { if (typeof walk.keys[k] === 'boolean') walk.keys[k] = false; });
+  walk.zoomIn = false; walk.zoomOut = false;
 }
 document.addEventListener("pointerlockchange", () => {
   if (!document.pointerLockElement && state.walking) exitWalkMode();
@@ -685,6 +735,39 @@ document.addEventListener("mousemove", (e) => {
     updateWalkCamera();
   }
 });
+
+// Keys for orbit mode (arrows pan, +/- zoom)
+const orbitKeys = { up: false, down: false, left: false, right: false, plus: false, minus: false };
+
+function tickOrbit(dt) {
+  if (state.walking) return;
+  const k = orbitKeys;
+  let panX = 0, panZ = 0;
+  if (k.up) panZ -= 1;
+  if (k.down) panZ += 1;
+  if (k.left) panX -= 1;
+  if (k.right) panX += 1;
+  if (panX !== 0 || panZ !== 0) {
+    // Pan in screen-relative direction (target moves on the ground plane)
+    const speed = orbit.radius * 0.6 * dt;
+    // Forward direction projected onto ground plane (matches camera horizontal view)
+    const fwdX = Math.cos(orbit.theta);
+    const fwdZ = Math.sin(orbit.theta);
+    const rightX = -fwdZ;
+    const rightZ = fwdX;
+    orbit.target.x += (rightX * panX + fwdX * panZ) * speed;
+    orbit.target.z += (rightZ * panX + fwdZ * panZ) * speed;
+    updateOrbitCamera();
+  }
+  if (k.plus || k.minus) {
+    const zoomSpeed = 1.5 * dt;
+    if (k.minus) orbit.radius *= (1 + zoomSpeed);
+    if (k.plus)  orbit.radius *= (1 - zoomSpeed);
+    orbit.radius = Math.max(8, Math.min(700, orbit.radius));
+    updateOrbitCamera();
+  }
+}
+
 window.addEventListener("keydown", (e) => {
   if (e.target.matches("input,textarea")) return;
   if (state.walking) {
@@ -694,14 +777,22 @@ window.addEventListener("keydown", (e) => {
     else if (kk === "a") walk.keys.a = true;
     else if (kk === "s") walk.keys.s = true;
     else if (kk === "d") walk.keys.d = true;
-    else if (e.key === "ArrowUp") walk.keys.up = true;
-    else if (e.key === "ArrowDown") walk.keys.down = true;
-    else if (e.key === "ArrowLeft") walk.keys.left = true;
-    else if (e.key === "ArrowRight") walk.keys.right = true;
+    else if (e.key === "ArrowUp") { walk.keys.up = true; e.preventDefault(); }
+    else if (e.key === "ArrowDown") { walk.keys.down = true; e.preventDefault(); }
+    else if (e.key === "ArrowLeft") { walk.keys.left = true; e.preventDefault(); }
+    else if (e.key === "ArrowRight") { walk.keys.right = true; e.preventDefault(); }
     else if (e.key === "Shift") walk.keys.shift = true;
     else if (e.key === " " || e.code === "Space") { walk.keys.space = true; e.preventDefault(); }
+    else if (e.key === "+" || e.key === "=") { walk.zoomIn = true; e.preventDefault(); }
+    else if (e.key === "-" || e.key === "_") { walk.zoomOut = true; e.preventDefault(); }
   } else {
-    if (e.key.toLowerCase() === "r") {
+    if (e.key === "ArrowUp") { orbitKeys.up = true; e.preventDefault(); }
+    else if (e.key === "ArrowDown") { orbitKeys.down = true; e.preventDefault(); }
+    else if (e.key === "ArrowLeft") { orbitKeys.left = true; e.preventDefault(); }
+    else if (e.key === "ArrowRight") { orbitKeys.right = true; e.preventDefault(); }
+    else if (e.key === "+" || e.key === "=") { orbitKeys.plus = true; e.preventDefault(); }
+    else if (e.key === "-" || e.key === "_") { orbitKeys.minus = true; e.preventDefault(); }
+    else if (e.key.toLowerCase() === "r") {
       orbit.theta = -Math.PI/4; orbit.phi = Math.PI/3.0; orbit.radius = 140;
       orbit.target.set(0, 5, 0);
       updateOrbitCamera();
@@ -724,6 +815,15 @@ window.addEventListener("keyup", (e) => {
     else if (e.key === "ArrowRight") walk.keys.right = false;
     else if (e.key === "Shift") walk.keys.shift = false;
     else if (e.key === " " || e.code === "Space") walk.keys.space = false;
+    else if (e.key === "+" || e.key === "=") walk.zoomIn = false;
+    else if (e.key === "-" || e.key === "_") walk.zoomOut = false;
+  } else {
+    if (e.key === "ArrowUp") orbitKeys.up = false;
+    else if (e.key === "ArrowDown") orbitKeys.down = false;
+    else if (e.key === "ArrowLeft") orbitKeys.left = false;
+    else if (e.key === "ArrowRight") orbitKeys.right = false;
+    else if (e.key === "+" || e.key === "=") orbitKeys.plus = false;
+    else if (e.key === "-" || e.key === "_") orbitKeys.minus = false;
   }
 });
 document.getElementById("walk-btn").addEventListener("click", () => {
@@ -742,7 +842,7 @@ canvas.addEventListener("mousedown", (e) => {
 canvas.addEventListener("contextmenu", e => e.preventDefault());
 window.addEventListener("mouseup", () => { isDragging = false; dragButton = -1; });
 window.addEventListener("mousemove", (e) => {
-  if (state.walking || !isDragging) return;
+  if (state.walking || !isDragging || isPainting) return;
   const dx = e.clientX - lastX, dy = e.clientY - lastY;
   lastX = e.clientX; lastY = e.clientY;
   if (dragButton === 0) {
@@ -803,28 +903,87 @@ canvas.addEventListener("touchend", () => { lastTouches = []; });
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
 let mouseDownPos = null;
+let isPainting = false;       // active when dragging in assign/count/obstruct modes
+let paintedThisStroke = new Set();   // avoid re-toggling same bin
+
+function paintCurrentBin() {
+  if (state.hoveredInstanceId < 0) return;
+  const key = getInstanceKey(state.hoveredInstanceId);
+  if (paintedThisStroke.has(key)) return;
+  paintedThisStroke.add(key);
+  if (state.mode === "assign") {
+    if (!state.activeDivision) return;
+    state.assignments[key] = state.activeDivision;
+    saveDebounced("assignments");
+  } else if (state.mode === "count") {
+    state.counted[key] = true;
+    saveDebounced("counted");
+  } else if (state.mode === "obstruct") {
+    state.obstructions[key] = true;
+    saveDebounced("obstructions");
+  }
+  updateColors(); updateStats(); renderDivisions(); updateHoverInfo();
+}
 
 canvas.addEventListener("mousedown", (e) => {
-  if (e.button === 0 && !state.walking) mouseDownPos = { x: e.clientX, y: e.clientY };
+  if (e.button !== 0 || state.walking) return;
+  mouseDownPos = { x: e.clientX, y: e.clientY };
+  // If hovering a bin and in a paint-capable mode, start painting (and prevent rotate)
+  pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  performHoverRaycast();
+  if (state.hoveredInstanceId >= 0
+      && (state.mode === "assign" || state.mode === "count" || state.mode === "obstruct")) {
+    // Only assign-mode requires an active division. Count/obstruct don't need one.
+    if (state.mode === "assign" && !state.activeDivision) return;
+    isPainting = true;
+    paintedThisStroke = new Set();
+    // Cancel any rotation that was about to start
+    isDragging = false;
+    paintCurrentBin();
+    e.stopPropagation();
+  }
 });
+
 canvas.addEventListener("mousemove", (e) => {
   if (state.walking) return;
   pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
   pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  if (isPainting) {
+    performHoverRaycast();
+    paintCurrentBin();
+    return;
+  }
   if (state.mode === "wall" && state.wallStart) {
     const ground = raycastGround();
     if (ground) { wallEnd = ground; updateWallPreview(); }
   }
 });
+
 canvas.addEventListener("mouseup", (e) => {
   if (state.walking) return;
-  if (e.button !== 0 || !mouseDownPos) return;
+  if (e.button !== 0) return;
+  if (isPainting) {
+    isPainting = false;
+    paintedThisStroke = new Set();
+    mouseDownPos = null;
+    return;
+  }
+  if (!mouseDownPos) return;
   const dx = e.clientX - mouseDownPos.x, dy = e.clientY - mouseDownPos.y;
   mouseDownPos = null;
   if (Math.sqrt(dx*dx + dy*dy) > 4) return;
   if (state.mode === "view") return;
   handleClick();
 });
+
+window.addEventListener("mouseup", () => {
+  if (isPainting) {
+    isPainting = false;
+    paintedThisStroke = new Set();
+  }
+});
+
 canvas.addEventListener("click", (e) => {
   if (state.walking && state.mode !== "view") {
     pointer.x = 0; pointer.y = 0;
@@ -955,9 +1114,9 @@ function updateHoverInfo() {
   statusEl.className = "hover-val" + (isCounted ? " hover-counted" : "") + (isObstruct ? " hover-obstruct" : "");
 
   const hint = document.getElementById("hover-hint");
-  if (state.mode === "count") hint.textContent = isCounted ? "Click to UN-mark counted" : "Click to mark counted";
-  else if (state.mode === "assign") hint.textContent = state.activeDivision ? "Click to tag with selected division" : "Pick a division first";
-  else if (state.mode === "obstruct") hint.textContent = isObstruct ? "Click to remove obstruction" : "Click to mark obstruction";
+  if (state.mode === "count") hint.textContent = isCounted ? "Click to UN-mark · drag to bulk-mark" : "Click to mark counted · drag to paint";
+  else if (state.mode === "assign") hint.textContent = state.activeDivision ? "Click or drag to paint with division" : "Pick a division first";
+  else if (state.mode === "obstruct") hint.textContent = isObstruct ? "Click to remove · drag to bulk-mark" : "Click to mark obstruction · drag to paint";
   else hint.textContent = "View mode — read only";
 }
 
@@ -1125,12 +1284,14 @@ function animate(t) {
     tickWalk(dt);
     if (t - lastRC > 50) { pointer.x = 0; pointer.y = 0; performHoverRaycast(); lastRC = t; }
   } else {
+    tickOrbit(dt);
     if (t - lastRC > 33) { performHoverRaycast(); lastRC = t; }
   }
   renderer.render(scene, camera);
 }
 async function init() {
   await loadState();
+  applyDefaultAssignments();
   rebuildWalls();
   updateColors(); updateStats(); renderDivisions();
   document.getElementById("loading").style.display = "none";
